@@ -7,16 +7,30 @@ import { defineConfig } from "astro/config";
 
 const site = process.env.SITE_URL ?? "https://oklch.biarapa.com";
 
-// https://astro.build/config
 export default defineConfig({
   site,
   vite: {
     plugins: [tailwindcss()],
     preview: {
-      allowedHosts: ["oklch.biarapa.com"],
+      allowedHosts: [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "oklch.biarapa.com",
+        "*.trycloudflare.com",
+        "*",
+      ],
     },
     server: {
-      allowedHosts: ["oklch.biarapa.com"]
+      host: true,
+      allowedHosts: [
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "oklch.biarapa.com",
+        "*.trycloudflare.com",
+        "*",
+      ],
     },
   },
 
