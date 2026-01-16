@@ -15,6 +15,9 @@ export default defineConfig({
     preview: {
       allowedHosts: ["oklch.biarapa.com"],
     },
+    server: {
+      allowedHosts: ["oklch.biarapa.com"]
+    },
   },
 
   integrations: [react(), sitemap()],
