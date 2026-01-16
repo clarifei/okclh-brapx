@@ -5,9 +5,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
-interface MonitorInfo {
+interface DisplayInfo {
   colorGamut: "srgb" | "p3" | "rec2020";
   colorDepth: number;
   pixelRatio: number;
@@ -16,29 +16,29 @@ interface MonitorInfo {
   screenHeight: number;
 }
 
-const GAMUT_CONFIG = {
+const GAMUT_INFO = {
   rec2020: {
     label: "Rec2020 (Wide Gamut)",
-    description: "Your monitor supports Rec2020 — the widest color gamut",
-    borderColor: "border-orange-500/50",
-    textColor: "text-orange-500",
+    desc: "Your monitor supports Rec2020 — widest color gamut",
+    border: "border-orange-500/50",
+    text: "text-orange-500",
   },
   p3: {
     label: "Display P3",
-    description: "Your monitor supports Display P3 — wider than sRGB",
-    borderColor: "border-yellow-500/50",
-    textColor: "text-yellow-500",
+    desc: "Your monitor supports Display P3 — wider than sRGB",
+    border: "border-yellow-500/50",
+    text: "text-yellow-500",
   },
   srgb: {
     label: "sRGB (Standard)",
-    description: "Your monitor uses sRGB — the universal web color standard",
-    borderColor: "border-primary/50",
-    textColor: "text-primary",
+    desc: "Your monitor uses sRGB — universal web color standard",
+    border: "border-primary/50",
+    text: "text-primary",
   },
 } as const;
 
-export function MonitorInfoCard() {
-  const [monitor, setMonitor] = useState<MonitorInfo>({
+export function DisplayInfoCard() {
+  const [display, setDisplay] = useState<DisplayInfo>({
     colorGamut: "srgb",
     colorDepth: 24,
     pixelRatio: 1,
@@ -48,16 +48,16 @@ export function MonitorInfoCard() {
   });
 
   useEffect(() => {
-    const detectMonitor = () => {
-      let colorGamut: "srgb" | "p3" | "rec2020" = "srgb";
+    const detectGamut = () => {
+      let gamut: "srgb" | "p3" | "rec2020" = "srgb";
       if (window.matchMedia("(color-gamut: rec2020)").matches) {
-        colorGamut = "rec2020";
+        gamut = "rec2020";
       } else if (window.matchMedia("(color-gamut: p3)").matches) {
-        colorGamut = "p3";
+        gamut = "p3";
       }
 
-      setMonitor({
-        colorGamut,
+      setDisplay({
+        colorGamut: gamut,
         colorDepth: window.screen.colorDepth || 24,
         pixelRatio: window.devicePixelRatio || 1,
         hdr: window.matchMedia("(dynamic-range: high)").matches,
@@ -66,14 +66,14 @@ export function MonitorInfoCard() {
       });
     };
 
-    detectMonitor();
+    detectGamut();
     const mediaQuery = window.matchMedia("(color-gamut: p3)");
-    mediaQuery.addEventListener("change", detectMonitor);
+    mediaQuery.addEventListener("change", detectGamut);
 
-    return () => mediaQuery.removeEventListener("change", detectMonitor);
+    return () => mediaQuery.removeEventListener("change", detectGamut);
   }, []);
 
-  const config = GAMUT_CONFIG[monitor.colorGamut];
+  const info = GAMUT_INFO[display.colorGamut];
 
   return (
     <div className="flex items-center gap-4">
@@ -89,21 +89,21 @@ export function MonitorInfoCard() {
               <span
                 className={cn(
                   "flex items-center gap-1 border px-2 py-0.5 text-xs",
-                  config.borderColor,
-                  config.textColor
+                  info.border,
+                  info.text
                 )}
               >
-                {monitor.colorGamut === "srgb" ? (
+                {display.colorGamut === "srgb" ? (
                   <Check className="h-3 w-3" />
                 ) : (
                   <AlertCircle className="h-3 w-3" />
                 )}
-                {config.label}
+                {info.label}
               </span>
             </TooltipTrigger>
-            <TooltipContent>{config.description}</TooltipContent>
+            <TooltipContent>{info.desc}</TooltipContent>
           </Tooltip>
-          {monitor.hdr && (
+          {display.hdr && (
             <span className="border border-primary/50 px-2 py-0.5 text-primary text-xs">
               HDR
             </span>
@@ -111,10 +111,10 @@ export function MonitorInfoCard() {
         </div>
         <div className="mt-1 flex items-center gap-3 text-muted-foreground text-xs">
           <span>
-            {monitor.screenWidth}×{monitor.screenHeight}
+            {display.screenWidth}×{display.screenHeight}
           </span>
-          <span>{monitor.colorDepth}-bit</span>
-          <span>{monitor.pixelRatio}x pixel ratio</span>
+          <span>{display.colorDepth}-bit</span>
+          <span>{display.pixelRatio}x pixel ratio</span>
         </div>
       </div>
     </div>

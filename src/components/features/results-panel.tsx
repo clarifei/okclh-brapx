@@ -1,8 +1,8 @@
-import { ExternalLink, Palette, Star } from "lucide-react";
-import { Color } from "@/components/color";
-import { MonitorInfoCard } from "@/components/monitor-info";
-import { BORDER_PATTERN_BACKGROUND } from "@/lib/border-pattern";
-import { type AnalysisResult, getOklchUrl } from "@/lib/color-analysis";
+import { ExternalLink, Star } from "lucide-react";
+import { DisplayInfoCard } from "@/components/features/display-info";
+import { Color } from "@/components/layout/color";
+import { type AnalysisResult, getOklchUrl } from "@/lib/color/extractor";
+import { BORDER_PATTERN_BACKGROUND } from "@/lib/utils/pattern";
 
 interface ResultsPanelProps {
   result: AnalysisResult;
@@ -24,7 +24,7 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
   return (
     <div>
       <div className="border-t border-b px-6 py-4">
-        <MonitorInfoCard />
+        <DisplayInfoCard />
       </div>
 
       <PatternDivider />
@@ -82,7 +82,6 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
       <div className="grid border-t border-b sm:grid-cols-2">
         <div className="border-b px-6 py-5 sm:border-r sm:border-b-0">
           <div className="mb-1 flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wide">
-            <Palette className="h-3.5 w-3.5" />
             Total OKLCH Colors
           </div>
           <p className="font-serif text-3xl text-primary">{totalColors}</p>
@@ -93,7 +92,6 @@ export function ResultsPanel({ result }: ResultsPanelProps) {
 
         <div className="px-6 py-5">
           <div className="mb-1 flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wide">
-            <Palette className="h-3.5 w-3.5" />
             Pixels Analyzed
           </div>
           <p className="font-serif text-3xl">

@@ -1,23 +1,23 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
-interface GridCrossProps {
+interface GridCornerProps {
   position: "tl" | "tr" | "bl" | "br";
   color?: "border" | "primary";
   className?: string;
 }
 
-const POSITION_CLASSNAMES = {
-  tl: "-top-1.25 -left-1.5",
-  tr: "-top-1.25 -right-1.5",
-  bl: "-bottom-1.25 -left-1.5",
-  br: "-bottom-1.25 -right-1.5",
+const POSITION_CLASSES = {
+  tl: "-top-[5.5px] -left-[6.5px]",
+  tr: "-top-[5.5px] -right-[6.5px]",
+  bl: "-bottom-[5.5px] -left-[6.5px]",
+  br: "-bottom-[5.5px] -right-[6.5px]",
 } as const;
 
-export function GridCross({
+export function GridCorner({
   position,
   color = "border",
   className,
-}: GridCrossProps) {
+}: GridCornerProps) {
   const borderClass = color === "primary" ? "border-primary" : "border-border";
 
   return (
@@ -25,7 +25,7 @@ export function GridCross({
       aria-hidden="true"
       className={cn(
         "pointer-events-none absolute z-99 flex size-3 items-center justify-center",
-        POSITION_CLASSNAMES[position],
+        POSITION_CLASSES[position],
         className
       )}
     >

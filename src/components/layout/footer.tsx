@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-export default function SiteFooter() {
+export default function Footer() {
   const currentYear = dayjs().year();
   const startYear = 2025;
   const yearText =
@@ -21,10 +21,6 @@ export default function SiteFooter() {
         .
       </p>
       <p>biarapa.com is a free service provided by RING-00.</p>
-      <p>
-        Not affiliated with any games or companies listed unless stated
-        otherwise.
-      </p>
     </div>
   );
 }

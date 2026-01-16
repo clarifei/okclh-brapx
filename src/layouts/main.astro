@@ -3,7 +3,7 @@ import "../styles/global.css";
 import "@fontsource/instrument-serif";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
-import SiteFooter from "../components/site-footer";
+import Footer from "../components/layout/footer";
 
 interface LayoutProps {
   title?: string;
@@ -68,7 +68,7 @@ const ogImageUrl = Astro.site
         <slot />
       </main>
       <footer class="w-full px-6 py-6">
-        <SiteFooter client:load />
+        <Footer client:load />
       </footer>
     </div>
   </body>

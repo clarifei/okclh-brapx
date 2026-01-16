@@ -1,7 +1,7 @@
 import { AlertCircle, Image as ImageIcon, Loader2, Upload } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 const SUPPORTED_FORMATS = ["PNG", "JPG", "WEBP", "GIF"] as const;
 
@@ -21,41 +21,34 @@ export function ImageUploader({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file?.type.startsWith("image/")) {
-        onImageSelect(file);
-      }
-    },
-    [onImageSelect]
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-  }, []);
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith("image/")) {
+      onImageSelect(file);
+    }
+  };
 
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        onImageSelect(file);
-      }
-    },
-    [onImageSelect]
-  );
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
-  const handleBrowseClick = useCallback(() => {
+  const onDragEnd = (_e: React.DragEvent) => {
+    setIsDragging(false);
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onImageSelect(file);
+    }
+  };
+
+  const onBrowseClick = () => {
     fileInputRef.current?.click();
-  }, []);
+  };
 
   if (error && previewUrl) {
     return (
@@ -100,7 +93,7 @@ export function ImageUploader({
       <input
         accept="image/*"
         className="sr-only"
-        onChange={handleFileInput}
+        onChange={onFileChange}
         ref={fileInputRef}
         type="file"
       />
@@ -110,10 +103,10 @@ export function ImageUploader({
           "flex min-h-70 w-full cursor-pointer flex-col items-center justify-center gap-4 p-6 transition-colors",
           isDragging && "bg-primary/5"
         )}
-        onClick={handleBrowseClick}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        onClick={onBrowseClick}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         type="button"
       >
         <div

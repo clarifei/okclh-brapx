@@ -1,5 +1,5 @@
-import { type ColorInfo, getOklchUrl } from "@/lib/color-analysis";
-import { cn } from "@/lib/utils";
+import { type ColorInfo, getOklchUrl } from "@/lib/color";
+import { cn } from "@/lib/utils/cn";
 
 interface ColorProps {
   color: ColorInfo;

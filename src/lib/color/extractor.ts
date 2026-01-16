@@ -1,47 +1,23 @@
 import Color from "colorjs.io";
+import type { AnalysisResult, ColorInfo } from "./types";
 
-const QUANTIZE_FACTOR = 12;
 const MAX_IMAGE_SIZE = 600;
-const MIN_ALPHA = 128;
 const MAX_COLORS = 60;
-const MERGE_DISTANCE_OKLAB = 0.02;
+const QUANTIZE_FACTOR = 12;
+const MERGE_DISTANCE = 0.02;
+const MIN_ALPHA = 128;
 
-const SKIN_LIGHTNESS = { min: 0.35, max: 0.85 };
-const SKIN_CHROMA = { min: 0.02, max: 0.16 };
-const SKIN_HUE = { min: 10, max: 90 };
+const SKIN_TONES = { l: [0.35, 0.85], c: [0.02, 0.16], h: [10, 90] };
+const LIGHTNESS = { optimal: [0.35, 0.75], acceptable: [0.2, 0.85] };
+const NEUTRAL = {
+  chroma: 0.03,
+  chromaExtreme: 0.05,
+  lightDark: 0.15,
+  lightLight: 0.92,
+};
+const ACCENT = { chroma: 0.12, chromaMin: 0.05 };
 
-const LIGHTNESS_OPTIMAL = { min: 0.35, max: 0.75 };
-const LIGHTNESS_ACCEPTABLE = { min: 0.2, max: 0.85 };
-
-const NEUTRAL_CHROMA = 0.03;
-const NEUTRAL_CHROMA_EXTREME = 0.05;
-const NEUTRAL_LIGHTNESS_DARK = 0.15;
-const NEUTRAL_LIGHTNESS_LIGHT = 0.92;
-
-const MIN_CHROMA_MULTIPLIER = 0.05;
-const ACCENT_CHROMA_THRESHOLD = 0.12;
-
-export interface ColorInfo {
-  hex: string;
-  oklch: {
-    l: number;
-    c: number;
-    h: number;
-  };
-  oklchString: string;
-  count: number;
-  percentage: number;
-  isPrimary?: boolean;
-}
-
-export interface AnalysisResult {
-  totalColors: number;
-  colors: ColorInfo[];
-  totalPixelsAnalyzed: number;
-  primaryColor: ColorInfo | null;
-}
-
-interface ColorAccumulator {
+interface ColorBucket {
   count: number;
   sumR: number;
   sumG: number;
@@ -56,17 +32,12 @@ function rgbToHex(r: number, g: number, b: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-function quantizeColor(r: number, g: number, b: number): string {
-  return `${Math.floor(r / QUANTIZE_FACTOR) * QUANTIZE_FACTOR},${Math.floor(g / QUANTIZE_FACTOR) * QUANTIZE_FACTOR},${Math.floor(b / QUANTIZE_FACTOR) * QUANTIZE_FACTOR}`;
+function getQuantizedKey(r: number, g: number, b: number): string {
+  const q = QUANTIZE_FACTOR;
+  return `${Math.floor(r / q) * q},${Math.floor(g / q) * q},${Math.floor(b / q) * q}`;
 }
 
-function getScaledDimensions(
-  width: number,
-  height: number
-): {
-  width: number;
-  height: number;
-} {
+function scaleDimensions(width: number, height: number) {
   if (width <= MAX_IMAGE_SIZE && height <= MAX_IMAGE_SIZE) {
     return { width, height };
   }
@@ -84,57 +55,52 @@ function getScaledDimensions(
   };
 }
 
-function addPixelToCounts(
-  colorCounts: Map<string, ColorAccumulator>,
+function addPixel(
+  buckets: Map<string, ColorBucket>,
   r: number,
   g: number,
   b: number
 ): void {
-  const key = quantizeColor(r, g, b);
-  const existing = colorCounts.get(key);
+  const key = getQuantizedKey(r, g, b);
+  const bucket = buckets.get(key);
 
-  if (existing) {
-    existing.count++;
-    existing.sumR += r;
-    existing.sumG += g;
-    existing.sumB += b;
-    return;
+  if (bucket) {
+    bucket.count++;
+    bucket.sumR += r;
+    bucket.sumG += g;
+    bucket.sumB += b;
+  } else {
+    buckets.set(key, { count: 1, sumR: r, sumG: g, sumB: b });
   }
-
-  colorCounts.set(key, { count: 1, sumR: r, sumG: g, sumB: b });
 }
 
-function countColors(pixels: Uint8ClampedArray): {
-  colorCounts: Map<string, ColorAccumulator>;
+function countPixels(pixels: Uint8ClampedArray): {
+  buckets: Map<string, ColorBucket>;
   validPixels: number;
 } {
-  const colorCounts = new Map<string, ColorAccumulator>();
+  const buckets = new Map<string, ColorBucket>();
   let validPixels = 0;
 
   for (let i = 0; i < pixels.length; i += 4) {
-    const r = pixels[i];
-    const g = pixels[i + 1];
-    const b = pixels[i + 2];
     const a = pixels[i + 3];
-
     if (a < MIN_ALPHA) {
       continue;
     }
 
     validPixels++;
-    addPixelToCounts(colorCounts, r, g, b);
+    addPixel(buckets, pixels[i], pixels[i + 1], pixels[i + 2]);
   }
 
-  return { colorCounts, validPixels };
+  return { buckets, validPixels };
 }
 
-function accumulatorToColorInfo(
-  value: ColorAccumulator,
+function bucketToColor(
+  bucket: ColorBucket,
   totalPixels: number
 ): ColorInfo | null {
-  const avgR = Math.round(value.sumR / value.count);
-  const avgG = Math.round(value.sumG / value.count);
-  const avgB = Math.round(value.sumB / value.count);
+  const avgR = Math.round(bucket.sumR / bucket.count);
+  const avgG = Math.round(bucket.sumG / bucket.count);
+  const avgB = Math.round(bucket.sumB / bucket.count);
   const hex = rgbToHex(avgR, avgG, avgB);
 
   try {
@@ -154,30 +120,24 @@ function accumulatorToColorInfo(
       hex,
       oklch: { l, c, h: Number.isNaN(h) ? 0 : h },
       oklchString,
-      count: value.count,
-      percentage: (value.count / totalPixels) * 100,
+      count: bucket.count,
+      percentage: (bucket.count / totalPixels) * 100,
     };
   } catch {
     return null;
   }
 }
 
-function oklchToOklabCoords(
-  oklch: ColorInfo["oklch"]
-): [number, number, number] {
+function oklchToOklab(oklch: ColorInfo["oklch"]): [number, number, number] {
   const hRad = (oklch.h * Math.PI) / 180;
-  const a = oklch.c * Math.cos(hRad);
-  const b = oklch.c * Math.sin(hRad);
-  return [oklch.l, a, b];
+  return [oklch.l, oklch.c * Math.cos(hRad), oklch.c * Math.sin(hRad)];
 }
 
-function oklabDistance(
+function distance(
   left: [number, number, number],
   right: [number, number, number]
 ): number {
-  const dl = left[0] - right[0];
-  const da = left[1] - right[1];
-  const db = left[2] - right[2];
+  const [dl, da, db] = left.map((v, i) => v - right[i]);
   return Math.sqrt(dl * dl + da * da + db * db);
 }
 
@@ -188,7 +148,7 @@ interface ColorCluster {
   sumB: number;
 }
 
-function findNearestClusterIndex(
+function findClosestCluster(
   centers: [number, number, number][],
   target: [number, number, number]
 ): number {
@@ -196,9 +156,9 @@ function findNearestClusterIndex(
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const [index, center] of centers.entries()) {
-    const distance = oklabDistance(center, target);
-    if (distance <= MERGE_DISTANCE_OKLAB && distance < bestDistance) {
-      bestDistance = distance;
+    const d = distance(center, target);
+    if (d <= MERGE_DISTANCE && d < bestDistance) {
+      bestDistance = d;
       bestIndex = index;
     }
   }
@@ -206,11 +166,11 @@ function findNearestClusterIndex(
   return bestIndex;
 }
 
-function addColorToCluster(
+function updateCluster(
   cluster: ColorCluster,
   color: ColorInfo
 ): [number, number, number] {
-  const [l, a, b] = oklchToOklabCoords(color.oklch);
+  const [l, a, b] = oklchToOklab(color.oklch);
   const nextCount = cluster.count + color.count;
 
   cluster.count = nextCount;
@@ -225,9 +185,9 @@ function addColorToCluster(
   ];
 }
 
-function clusterToColorInfo(
+function clusterToColor(
   cluster: ColorCluster,
-  totalPixelsForPercentages: number
+  totalPixels: number
 ): ColorInfo | null {
   const l = cluster.sumL / cluster.count;
   const a = cluster.sumA / cluster.count;
@@ -257,23 +217,20 @@ function clusterToColorInfo(
       oklch: { l: oklchL, c: oklchC, h: Number.isNaN(oklchH) ? 0 : oklchH },
       oklchString,
       count: cluster.count,
-      percentage: (cluster.count / totalPixelsForPercentages) * 100,
+      percentage: (cluster.count / totalPixels) * 100,
     };
   } catch {
     return null;
   }
 }
 
-function mergeSimilarColors(
-  colors: ColorInfo[],
-  totalPixelsForPercentages: number
-): ColorInfo[] {
+function mergeColors(colors: ColorInfo[], totalPixels: number): ColorInfo[] {
   const clusters: ColorCluster[] = [];
-  const clusterCenters: [number, number, number][] = [];
+  const centers: [number, number, number][] = [];
 
   for (const color of colors) {
-    const coords = oklchToOklabCoords(color.oklch);
-    const nearestIndex = findNearestClusterIndex(clusterCenters, coords);
+    const coords = oklchToOklab(color.oklch);
+    const nearestIndex = findClosestCluster(centers, coords);
 
     if (nearestIndex === -1) {
       clusters.push({
@@ -282,19 +239,15 @@ function mergeSimilarColors(
         sumA: coords[1] * color.count,
         sumB: coords[2] * color.count,
       });
-      clusterCenters.push(coords);
-      continue;
+      centers.push(coords);
+    } else {
+      centers[nearestIndex] = updateCluster(clusters[nearestIndex], color);
     }
-
-    clusterCenters[nearestIndex] = addColorToCluster(
-      clusters[nearestIndex],
-      color
-    );
   }
 
   const merged = clusters
-    .map((cluster) => clusterToColorInfo(cluster, totalPixelsForPercentages))
-    .filter((color): color is ColorInfo => color !== null);
+    .map((cluster) => clusterToColor(cluster, totalPixels))
+    .filter((c): c is ColorInfo => c !== null);
 
   merged.sort((a, b) => b.count - a.count);
   return merged;
@@ -323,29 +276,29 @@ function determinePrimaryColor(colors: ColorInfo[]): ColorInfo | null {
 }
 
 function isSkinTone(l: number, c: number, h: number): boolean {
+  const {
+    l: [lMin, lMax],
+    c: [cMin, cMax],
+    h: [hMin, hMax],
+  } = SKIN_TONES;
   return (
-    l >= SKIN_LIGHTNESS.min &&
-    l <= SKIN_LIGHTNESS.max &&
-    c >= SKIN_CHROMA.min &&
-    c <= SKIN_CHROMA.max &&
-    h >= SKIN_HUE.min &&
-    h <= SKIN_HUE.max
+    l >= lMin && l <= lMax && c >= cMin && c <= cMax && h >= hMin && h <= hMax
   );
 }
 
 function isNeutral(c: number, l: number): boolean {
   return (
-    c < NEUTRAL_CHROMA ||
-    (c < NEUTRAL_CHROMA_EXTREME &&
-      (l < NEUTRAL_LIGHTNESS_DARK || l > NEUTRAL_LIGHTNESS_LIGHT))
+    c < NEUTRAL.chroma ||
+    (c < NEUTRAL.chromaExtreme &&
+      (l < NEUTRAL.lightDark || l > NEUTRAL.lightLight))
   );
 }
 
 function getLightnessScore(l: number): number {
-  if (l >= LIGHTNESS_OPTIMAL.min && l <= LIGHTNESS_OPTIMAL.max) {
+  if (l >= LIGHTNESS.optimal[0] && l <= LIGHTNESS.optimal[1]) {
     return 1.0;
   }
-  if (l >= LIGHTNESS_ACCEPTABLE.min && l <= LIGHTNESS_ACCEPTABLE.max) {
+  if (l >= LIGHTNESS.acceptable[0] && l <= LIGHTNESS.acceptable[1]) {
     return 0.7;
   }
   return 0.3;
@@ -354,11 +307,11 @@ function getLightnessScore(l: number): number {
 function getColorWeight(color: ColorInfo): number {
   const { l, c, h } = color.oklch;
 
-  const chromaMultiplier = c > MIN_CHROMA_MULTIPLIER ? (c * 8) ** 1.5 : 0.1;
+  const chromaMultiplier = c > ACCENT.chromaMin ? (c * 8) ** 1.5 : 0.1;
   const lightnessScore = getLightnessScore(l);
   const skinPenalty = isSkinTone(l, c, h) ? 0.15 : 1.0;
   const neutralPenalty = isNeutral(c, l) ? 0.05 : 1.0;
-  const accentBonus = c > ACCENT_CHROMA_THRESHOLD ? 2.0 : 1.0;
+  const accentBonus = c > ACCENT.chroma ? 2.0 : 1.0;
 
   return (
     color.percentage *
@@ -384,7 +337,7 @@ export function analyzeImage(imageFile: File): Promise<AnalysisResult> {
     const objectUrl = URL.createObjectURL(imageFile);
 
     img.onload = () => {
-      const { width, height } = getScaledDimensions(img.width, img.height);
+      const { width, height } = scaleDimensions(img.width, img.height);
 
       canvas.width = width;
       canvas.height = height;
@@ -393,7 +346,7 @@ export function analyzeImage(imageFile: File): Promise<AnalysisResult> {
       ctx.drawImage(img, 0, 0, width, height);
 
       const imageData = ctx.getImageData(0, 0, width, height);
-      const { colorCounts, validPixels } = countColors(imageData.data);
+      const { buckets, validPixels } = countPixels(imageData.data);
 
       if (validPixels === 0) {
         resolve({
@@ -406,24 +359,18 @@ export function analyzeImage(imageFile: File): Promise<AnalysisResult> {
         return;
       }
 
-      const totalPixelsForPercentages = Math.max(validPixels, 1);
+      const totalPixels = Math.max(validPixels, 1);
       const colors: ColorInfo[] = [];
 
-      for (const value of colorCounts.values()) {
-        const colorInfo = accumulatorToColorInfo(
-          value,
-          totalPixelsForPercentages
-        );
+      for (const bucket of buckets.values()) {
+        const colorInfo = bucketToColor(bucket, totalPixels);
         if (colorInfo) {
           colors.push(colorInfo);
         }
       }
 
       colors.sort((a, b) => b.count - a.count);
-      const mergedColors = mergeSimilarColors(
-        colors,
-        totalPixelsForPercentages
-      );
+      const mergedColors = mergeColors(colors, totalPixels);
       const primaryColor = determinePrimaryColor(mergedColors);
 
       resolve({
@@ -445,16 +392,7 @@ export function analyzeImage(imageFile: File): Promise<AnalysisResult> {
   });
 }
 
-export function formatOklch(oklchVal: ColorInfo["oklch"]): string {
-  const l = (oklchVal.l * 100).toFixed(2);
-  const c = oklchVal.c.toFixed(4);
-  const h = oklchVal.h.toFixed(2);
-  return `oklch(${l}% ${c} ${h})`;
-}
-
-export function getOklchUrl(oklchVal: ColorInfo["oklch"]): string {
-  const l = oklchVal.l.toFixed(4);
-  const c = oklchVal.c.toFixed(4);
-  const h = oklchVal.h.toFixed(2);
-  return `https://oklch.com/#${l},${c},${h},100`;
+export function getOklchUrl(oklch: ColorInfo["oklch"]): string {
+  const { l, c, h } = oklch;
+  return `https://oklch.com/#${l.toFixed(4)},${c.toFixed(4)},${h.toFixed(2)},100`;
 }
