@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1200 630">
+  <!-- Generator: Adobe Illustrator 30.1.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 136)  -->
+  <defs>
+    <style>
+      .st0 {
+        font-size: 32px;
+      }
+
+      .st0, .st1, .st2, .st3, .st4 {
+        isolation: isolate;
+      }
+
+      .st0, .st2 {
+        fill: #3d3929;
+      }
+
+      .st0, .st4 {
+        font-family: ArialMT, Arial;
+      }
+
+      .st1, .st5 {
+        fill: #f47532;
+      }
+
+      .st1, .st2 {
+        font-family: MS-UIGothic, 'MS UI Gothic';
+        font-size: 92px;
+      }
+
+      .st6 {
+        fill: #e5e5e3;
+      }
+
+      .st7 {
+        fill: #faf9f5;
+      }
+
+      .st4 {
+        fill: #83827d;
+        font-size: 26px;
+      }
+
+      .st8 {
+        fill: none;
+        stroke: #dad9d4;
+        stroke-width: 2px;
+      }
+    </style>
+  </defs>
+  <rect class="st6" width="1200" height="630"/>
+  <rect class="st7" x="96" y="92" width="1008" height="446" rx="28" ry="28"/>
+  <rect class="st8" x="96" y="92" width="1008" height="446" rx="28" ry="28"/>
+  <path class="st5" d="M133,124h934c2.76,0,5,2.24,5,5h0c0,2.76-2.24,5-5,5H133c-2.76,0-5-2.24-5-5h0c0-2.76,2.24-5,5-5Z"/>
+  <g class="st3">
+    <g class="st3">
+      <text class="st2" transform="translate(160 280)"><tspan x="0" y="0">oklch</tspan></text>
+    </g>
+    <g class="st3">
+      <text class="st1" transform="translate(360.53 280)"><tspan x="0" y="0">.gen</tspan></text>
+    </g>
+  </g>
+  <g class="st3">
+    <text class="st0" transform="translate(160 352)"><tspan x="0" y="0">Extract OKLCH colors from images — 100% in your browser.</tspan></text>
+  </g>
+  <g class="st3">
+    <text class="st4" transform="translate(160 404)"><tspan x="0" y="0">No uploads. No AI. Just color.</tspan></text>
+  </g>
+</svg>

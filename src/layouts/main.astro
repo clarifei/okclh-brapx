@@ -1,16 +1,73 @@
 ---
-import '../styles/global.css';
-const { content } = Astro.props;
+import "../styles/global.css";
+import "@fontsource/instrument-serif";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+import SiteFooter from "../components/site-footer";
+
+interface LayoutProps {
+  title?: string;
+  description?: string;
+  lang?: string;
+  ogImage?: string;
+  robots?: string;
+  content?: {
+    title?: string;
+    description?: string;
+  };
+}
+
+const {
+  content,
+  title,
+  description,
+  lang = "en",
+  ogImage = "/og.svg",
+  robots,
+} = Astro.props as LayoutProps;
+
+const pageTitle = title ?? content?.title ?? "oklch.gen";
+const pageDescription =
+  description ??
+  content?.description ??
+  "Analyze an image in your browser and extract OKLCH colors. No uploads.";
+const canonicalUrl = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).toString()
+  : undefined;
+const ogImageUrl = Astro.site ? new URL(ogImage, Astro.site).toString() : ogImage;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<title>{content.title}</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="generator" content={Astro.generator}>
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription}>
+    {robots ? <meta name="robots" content={robots} /> : null}
+    {canonicalUrl ? <link rel="canonical" href={canonicalUrl} /> : null}
+    <meta property="og:title" content={pageTitle}>
+    <meta property="og:description" content={pageDescription}>
+    {canonicalUrl ? <meta property="og:url" content={canonicalUrl} /> : null}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="oklch.gen">
+    <meta property="og:image" content={ogImageUrl}>
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content={pageTitle}>
+    <meta name="twitter:description" content={pageDescription}>
+    <meta name="twitter:image" content={ogImageUrl}>
+  </head>
+  <body class="min-h-screen bg-background">
+    <div
+      class="mx-auto flex min-h-screen w-full max-w-4xl flex-col md:border-l md:border-r"
+    >
+      <main class="flex flex-1 flex-col justify-center">
+        <slot />
+      </main>
+      <footer class="w-full px-6 py-6">
+        <SiteFooter client:load />
+      </footer>
+    </div>
+  </body>
 </html>
