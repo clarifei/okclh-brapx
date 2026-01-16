@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "start": "astro preview --host 0.0.0.0 --port 4321",
-    "pm2:start": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:start": "pm2 start bun --name oklch-gen -- x serve ./dist -p 4321",
     "pm2:reload": "pm2 reload oklch-gen",
     "pm2:restart": "pm2 restart oklch-gen",
     "pm2:stop": "pm2 stop oklch-gen",
