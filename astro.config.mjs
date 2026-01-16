@@ -12,25 +12,11 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     preview: {
-      allowedHosts: [
-        "localhost",
-        "127.0.0.1",
-        "0.0.0.0",
-        "oklch.biarapa.com",
-        "*.trycloudflare.com",
-        "*",
-      ],
+      allowedHosts: true,
     },
     server: {
       host: true,
-      allowedHosts: [
-        "localhost",
-        "127.0.0.1",
-        "0.0.0.0",
-        "oklch.biarapa.com",
-        "*.trycloudflare.com",
-        "*",
-      ],
+      allowedHosts: true,
     },
   },
 
