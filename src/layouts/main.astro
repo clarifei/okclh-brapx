@@ -34,7 +34,9 @@ const pageDescription =
 const canonicalUrl = Astro.site
   ? new URL(Astro.url.pathname, Astro.site).toString()
   : undefined;
-const ogImageUrl = Astro.site ? new URL(ogImage, Astro.site).toString() : ogImage;
+const ogImageUrl = Astro.site
+  ? new URL(ogImage, Astro.site).toString()
+  : ogImage;
 ---
 
 <html lang={lang}>
