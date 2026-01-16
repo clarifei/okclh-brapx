@@ -12,7 +12,7 @@ export function Color({ color }: ColorProps) {
     <a
       aria-label={`Open ${color.hex.toUpperCase()} in oklch.com`}
       className={cn(
-        "block h-full w-full border-r border-b focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+        "block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         color.isPrimary && "ring-2 ring-primary ring-inset"
       )}
       href={oklchUrl}
