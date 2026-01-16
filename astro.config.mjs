@@ -12,6 +12,9 @@ export default defineConfig({
   site,
   vite: {
     plugins: [tailwindcss()],
+    preview: {
+      allowedHosts: ["oklch.biarapa.com"],
+    },
   },
 
   integrations: [react(), sitemap()],
